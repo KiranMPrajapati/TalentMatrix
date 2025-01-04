@@ -6,7 +6,7 @@ from markitdown import MarkItDown
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
 
 from llm_caller import LLM
-from resume_validator_and_processor import ResumeProcessor
+from utils.resume_validator_and_processor import ResumeProcessor
 
 
 # Locate the base TalentMatrix directory
