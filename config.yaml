@@ -1,0 +1,9 @@
+chroma:
+    chroma_db_storage_path: data/chroma-data
+    collection_name: resume_jd_collections
+data_path:
+    path_to_jd: data/dataset/jobDescriptions
+    path_to_train_resume: data/dataset/trainResumes
+    path_to_test_resume: data/dataset/testResumes
+    path_to_train_csv: data/dataset/train.csv
+    path_to_test_csv: data/dataset/test.csv
