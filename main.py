@@ -43,8 +43,8 @@ validator = ResumeProcessor(llm)
 chroma_client, collection = setup_chromadb(CONFIG_DATA['chroma']['chroma_db_storage_path'], CONFIG_DATA['chroma']['collection_name'])
 
 
-def add_jd_collection():
-    df = pd.read_csv(f"{CONFIG_DATA['path_to_jd']}/JD_data.csv")
+def add_jd_collection(jd_path="JD_data.csv"):
+    df = pd.read_csv(f"{CONFIG_DATA['path_to_jd']}/{jd_path}")
 
     data = []
 
@@ -90,6 +90,8 @@ def retrieve(resume_path, top_k=2):
 
     for doc in results:
         print(f"Query Result: {doc}")
+
+    return results
     
 
 def main():
@@ -99,9 +101,9 @@ def main():
 
 
 # Route to home page
-@app.route('/')
-def add_to_collection():
-    add_collection(path_to_train_resume)
+@app.route('/add_jd_to_database')
+def add_jd_to_database(jd_path):
+    add_jd_collection(jd_path)
     return jsonify({"message": "Created collection"})    
     
 

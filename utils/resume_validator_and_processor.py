@@ -34,7 +34,7 @@ class ResumeProcessor:
             merged_data = self.merge_data(data, reprocessed_data)
             self.count += 1
 
-            if self.count >= max_retries:
+            if self.count >= self.max_retries:
                 return "The resume is not complete and rejected."
             return self.validate_and_process(merged_data)  
 
