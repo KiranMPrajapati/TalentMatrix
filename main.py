@@ -1,29 +1,24 @@
 import os
-import sys
 import yaml
 import json
 import pandas as pd
-from src.reader import DOC_READER
+import concurrent.futures
+
 from markitdown import MarkItDown
 
-# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../utils')))
-
 from src.llm_caller import LLM
+from src.reader import DOC_READER
 from src.chroma import setup_chromadb
 from utils.resume_validator_and_processor import ResumeProcessor
+from logger_config import get_logger
 
-from flask import Flask, jsonify, request
+logger = get_logger("MainModule")
 
-# Initialize the Flask app
-app = Flask(__name__)
-
-
+# Load configuration file
 with open('config.yaml', 'r') as file:
     CONFIG_DATA = yaml.load(file, Loader=yaml.FullLoader)
 
-
-# Locate the base TalentMatrix directory
-current_dir = os.path.abspath(__file__)  
+current_dir = os.path.abspath(__file__)
 base_path = os.path.abspath(os.path.join(current_dir, "../../TalentMatrix"))
 
 path_to_jd = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_jd'])
@@ -34,85 +29,118 @@ path_to_test_csv = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_tes
 
 md = MarkItDown()
 reader = DOC_READER(md)
-
-
 llm = LLM()
 validator = ResumeProcessor(llm)
-
-
-chroma_client, collection = setup_chromadb(CONFIG_DATA['chroma']['chroma_db_storage_path'], CONFIG_DATA['chroma']['collection_name'])
-
+chroma_client, collection = setup_chromadb(
+    CONFIG_DATA['chroma']['chroma_db_storage_path'], CONFIG_DATA['chroma']['collection_name']
+)
 
 def add_jd_collection(jd_path="JD_data.csv"):
-    df = pd.read_csv(f"{CONFIG_DATA['path_to_jd']}/{jd_path}")
-
+    """Add job descriptions to the ChromaDB collection."""
+    df = pd.read_csv(os.path.join(path_to_jd, jd_path))
     data = []
 
     for index, row in df.iterrows():
-        value = {'page_content': f"Job: {row['job']}\n Position: {row['position']}\n Location: {row['location']}\n Job Description: {row['description'][0]}", 'idx': index}
+        value = {
+            'page_content': f"Job: {row['job']}\nPosition: {row['position']}\nLocation: {row['location']}\nJob Description: {row['description'][0]}",
+            'idx': index
+        }
         data.append(value)
 
     chroma_client.add_to_collection(collection=collection, docs=data)
     return "Success"
     
 
-
 def add_collection(file_path):
-
-    data = [] 
+    """Add resumes to the ChromaDB collection."""
+    data = []
     for file in os.listdir(file_path):
-        text = reader.doc_markdown(f"{file_path}/{file}")
-        print(text)
-        # metadata = llm(text)
-        metadata = {'basics': {'name': 'HOWARD GOODMAN', 'position': 'Fresher and NLP Engineer', 'email': 'abc@gmail.com', 'summary': 'test'}, 
-        'work': [{'company': 'Zynta Labs', 'title': 'NLP Developer Intern', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}], 
-        'skills': ['Machine Learning', 'Natural Language Processing', 'Deep Learning', 'Sentiment Analysis', 'Python', 'NLTK', 'BERT', 'GPT', 'XLNet', 'Text Analysis', 'Text Extraction', 'OCR'], 
-        'education': [{'school': 'Rajiv Gandhi Memorial University', 'degree': 'B.TECH(Electrical)', 'year': '2020', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}], 
-        'projects': [{'title': 'abc', 'descriptions': 'Made a embedded device that converted ASL to voice and vice versa in real-time.'}]}
-        validator = ResumeProcessor(llm)
-        result = validator.validate_and_process(metadata)
-        result['page_content'] = text
+        result = reader.doc_markdown(os.path.join(file_path, file))
+        # print(result)
+        result = {
+            'basics': {'name': 'HOWARD GOODMAN', 'position': 'Fresher and NLP Engineer', 'email': 'abc@gmail.com', 'summary': 'test'},
+            'work': [{'company': 'Zynta Labs', 'title': 'NLP Developer Intern', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
+            'skills': ['Machine Learning', 'Natural Language Processing', 'Deep Learning', 'Sentiment Analysis', 'Python', 'NLTK', 'BERT', 'GPT', 'XLNet', 'Text Analysis', 'Text Extraction', 'OCR'],
+            'education': [{'school': 'Rajiv Gandhi Memorial University', 'degree': 'B.TECH(Electrical)', 'year': '2020', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
+            'projects': [{'title': 'abc', 'descriptions': 'Made an embedded device that converted ASL to voice and vice versa in real-time.'}]
+        }
+        result, flag = validator.validate_and_process(result)
+        if flag == False:
+            logger.error(result)
+            return result
+
+        result['page_content'] = result
         data.append(result)
 
     chroma_client.add_to_collection(collection=collection, docs=data)
+    logger.info(f"Successfully added {file_path} to chroma database")
+
+    return "Success"
 
 def retrieve(resume_path, top_k=2):
-    # text = reader.doc_markdown(resume_path)
-    # result = llm(text)
-    result = {'basics': {'name': 'HOWARD GOODMAN', 'position': 'Fresher and NLP Engineer', 'email': 'abc@gmail.com', 'summary': 'test'}, 
-    'work': [{'company': 'Zynta Labs', 'title': 'NLP Developer Intern', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}], 
-    'skills': ['Machine Learning', 'Natural Language Processing', 'Deep Learning', 'Sentiment Analysis', 'Python', 'NLTK', 'BERT', 'GPT', 'XLNet', 'Text Analysis', 'Text Extraction', 'OCR'], 
-    'education': [{'school': 'Rajiv Gandhi Memorial University', 'degree': 'B.TECH(Electrical)', 'year': '2020', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}], 
-    'projects': [{'title': 'abc', 'descriptions': 'Made a embedded device that converted ASL to voice and vice versa in real-time.'}]}
-    # result = validator.validate_and_process(result)
-    result = json.dumps(result)
-    results = chroma_client.query_collection(collection, result, top_k=top_k)                  
+    """Retrieve the most relevant job descriptions for a given resume."""
+    text = reader.doc_markdown(resume_path)
+    result = llm(text)  
+
+    result = {
+        'basics': {'name': 'HOWARD GOODMAN', 'position': 'Fresher and NLP Engineer', 'email': 'abc@gmail.com', 'summary': 'test'},
+        'work': [{'company': 'Zynta Labs', 'title': 'NLP Developer Intern', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
+        'skills': ['Machine Learning', 'Natural Language Processing', 'Deep Learning', 'Sentiment Analysis', 'Python', 'NLTK', 'BERT', 'GPT', 'XLNet', 'Text Analysis', 'Text Extraction', 'OCR'],
+        'education': [{'school': 'Rajiv Gandhi Memorial University', 'degree': 'B.TECH(Electrical)', 'year': '2020', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
+        'projects': [{'title': 'abc', 'descriptions': 'Made an embedded device that converted ASL to voice and vice versa in real-time.'}]
+    }
+
+    results = chroma_client.query_collection(collection, json.dumps(result), top_k=top_k)
 
     for doc in results:
         print(f"Query Result: {doc}")
+    
+    logger.info(f"Retrieval of most relevant job descriptions for {resume_path}")
 
     return results
+
+
+def process_resume(resume_path, top_k=2):
+    """Wrapper function to process a single resume."""
+    try:
+        results = retrieve(resume_path, top_k=top_k)
+        return {resume_path: results}
+    except Exception as e:
+        logger.error(f"Error processing {resume_path}: {e}")
+        return {resume_path: None}
+
+def process_resumes_in_parallel(resume_paths, top_k=2, max_workers=2):
+    """Process multiple resumes in parallel."""
+    resume_files = []
+    for files in os.listdir(resume_paths):
+        if '.pdf' in files:
+            resume_files.append(f"{resume_paths}/{files}")
+
+    if not resume_files:
+        logger.error('File not found')
+        raise ValueError("No resume files provided. Please ensure the list of resumes is not empty.")
+
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_resume = {executor.submit(process_resume, path, top_k): path for path in resume_files}
+        for future in concurrent.futures.as_completed(future_to_resume):
+            resume_path = future_to_resume[future]
+            try:
+                result = future.result()
+                results.update(result)
+            except Exception as e:
+                logger.error(f"Error retrieving results for {resume_path}: {e}")
     
-
-def main():
-    # add_collection(path_to_train_resume)
-    retrieve(f'{CONFIG_DATA['data_path']['path_to_train_resume']}/candidate_000.pdf')
-
-
-
-# Route to home page
-@app.route('/add_jd_to_database')
-def add_jd_to_database(jd_path):
-    add_jd_collection(jd_path)
-    return jsonify({"message": "Created collection"})    
-    
-
-@app.route('/api/retrieve', methods=['GET'])
-def retrieve_collection():
-    name = request.args.get('name', 'Guest')  # Get 'name' parameter from the URL
-    return jsonify({"greeting": f"Hello, {name}!"})
-
+    return results
 
 
 if __name__ == "__main__":
-    main()
+    resume_paths = "/home/kiran/assignment/TalentMatrix/data/dataset/test_resumes"
+    top_k_results = process_resumes_in_parallel(resume_paths, top_k=2, max_workers=os.cpu_count())
+    print(top_k_results)
+
+    result = add_collection(path_to_train_resume)
+
+    # Retrieve example
+    resume_path = 'candidate_000.pdf'
+    retrieve(os.path.join(path_to_train_resume, resume_path))

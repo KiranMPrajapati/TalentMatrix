@@ -3,7 +3,7 @@ import json
 import chromadb
 from FlagEmbedding import FlagModel
 from chromadb.api.types import EmbeddingFunction
-from .logger_config import get_logger
+from logger_config import get_logger
 
 logger = get_logger("MainModule")
 

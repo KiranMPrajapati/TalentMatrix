@@ -1,6 +1,3 @@
-import os
-import re
-import sys
 import json
 from pydantic import ValidationError
 
@@ -35,8 +32,8 @@ class ResumeProcessor:
             self.count += 1
 
             if self.count >= self.max_retries:
-                return "The resume is not complete and rejected."
-            return self.validate_and_process(merged_data)  
+                return "The resume is not complete and rejected.", False
+            return self.validate_and_process(merged_data), True
 
     def parse_validation_errors(self, error, original_data):
         """
@@ -68,9 +65,8 @@ class ResumeProcessor:
         """
         Safely parse the LLM output (assuming it's valid JSON format).
         """
-        import json
         try:
-            return json.loads(llm_output)  # Use safe parsing
+            return json.loads(llm_output)  
         except json.JSONDecodeError:
             print("Error: LLM output is not valid JSON.")
             return {}

@@ -5,6 +5,10 @@ import torch
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from logger_config import get_logger
+
+logger = get_logger("MainModule")
+
 
 class LLM:
     def __init__(self, model_name="Qwen/Qwen2.5-7B-Instruct", max_chunk_size=1024):
@@ -72,9 +76,23 @@ class LLM:
         """
 
         return SYSTEM_PROMPT, schema_description
+    
+    def count_tokens(self, chunks):
+        """
+        Calculate token size 
+        """
+        token_size = 0 
+        token_size += sum(chunk.size(0) for chunk in chunks)
+        return token_size
 
     def generate_response(self, resume_text, system_prompt, schema_description):
+        """
+        Generate LLM response
+        """
         chunks = self.chunk_text(resume_text)
+
+        token_size = self.count_tokens(chunks)
+        logger.info(f"\nToken size:\n {token_size}")
 
         complete_response = ""
         for chunk in chunks:
@@ -85,15 +103,12 @@ class LLM:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ]
-            print('here1')
             text = self.tokenizer.apply_chat_template(
                 messages,
                 tokenize=False,
                 add_generation_prompt=True
             )
-            print('here2')
             model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-            print('here3')
 
             generated_ids = self.model.generate(
                 **model_inputs,
@@ -103,7 +118,6 @@ class LLM:
             generated_ids = [
                 output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
             ]
-            print('here4')
 
             response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
             complete_response += response.strip() + "\n"
@@ -114,17 +128,13 @@ class LLM:
         if not retry:
             system_prompt, schema_description = self.create_summarizer_prompt()
             self.summary_text = self.generate_response(resume_text, system_prompt, schema_description)
-            print(self.summary_text)
         system_prompt, schema_description = self.create_json_extractor_prompt()
         complete_response = self.generate_response(self.summary_text, system_prompt, schema_description)
-        print(complete_response)
 
-        # Extract the JSON structure from the input string
         json_match = re.search(r'```json\n(.*?)\n```', complete_response, re.DOTALL)
         if json_match:
             json_string = json_match.group(1)
             try:
-                # Parse the JSON structure
                 data = json.loads(json_string)
                 # print(json.dumps(parsed_json, indent=4))
                 return data

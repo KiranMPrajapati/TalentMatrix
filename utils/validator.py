@@ -103,15 +103,15 @@ class Resume(BaseModel):
     basics: Basics
     work: Optional[List[Work]] = None
     volunteer: Optional[List[Volunteer]] = None
-    education: List[Education]
-    awards: Optional[List[Award]] = None
-    certificates: Optional[List[Certificate]] = None
-    publications: Optional[List[Publication]] = None
+    education: List[Union[Education, str]]
+    awards: Optional[List[Union[Award, str]]] = None
+    certificates: Optional[List[Union[Certificate, str]]] = None
+    publications: Optional[List[Union[Publication, str]]] = None
     skills: List[Union[str, Dict]]
     languages: Optional[List[Language]] = None
-    interests: Optional[List[Interest]] = None
-    references: Optional[List[Reference]] = None
-    projects: List[Project]
+    interests: Optional[List[Union[Interest, str]]] = None
+    references: Optional[List[Union[Reference, str]]] = None
+    projects: List[Union[Project, str]]
 
     @validator('work', 'education', pre=True, each_item=True)
     def validate_dates(cls, value):
