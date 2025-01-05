@@ -72,6 +72,7 @@ def retrieve(resume_path, top_k=2):
     """Retrieve the most relevant job descriptions for a given resume."""
     text = reader.doc_markdown(resume_path)
     result = llm(text)  
+    
     result, flag = validator.validate_and_process(result)
     if flag == False:
         logger.error(result)
@@ -88,6 +89,7 @@ def retrieve(resume_path, top_k=2):
 
 
 def process_resume(resume_path, top_k=2):
+    """Wrapper function to process a single resume."""
     try:
         results = retrieve(resume_path, top_k=top_k)
         return {resume_path: results}
@@ -121,7 +123,7 @@ def process_resumes_in_parallel(resume_paths, top_k=2, max_workers=2):
 
 
 if __name__ == "__main__":
-    resume_paths = "/home/kiran/assignment/TalentMatrix/data/dataset/test_resumes"
+    resume_paths = os.path.join(f"{base_path}/data/dataset/test_resumes")
     top_k_results = process_resumes_in_parallel(resume_paths, top_k=2, max_workers=os.cpu_count())
     print(top_k_results)
 
