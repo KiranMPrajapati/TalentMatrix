@@ -39,5 +39,12 @@ The dataset has been compiled in the following drive:
 ## Setup
 1. Create venv
 2. Install the requirements file
+
 `pip install requirements.txt`
+
 3. Run the file
+
+`cd TalentMatrix`
+
+`streamlit run app/run.py`
+

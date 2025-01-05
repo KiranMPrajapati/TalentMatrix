@@ -15,11 +15,15 @@ from logger_config import get_logger
 logger = get_logger("MainModule")
 
 # Load configuration file
-with open('config.yaml', 'r') as file:
-    CONFIG_DATA = yaml.load(file, Loader=yaml.FullLoader)
+def load_config(path='config.yaml'):
+    with open(path, 'r') as file:
+        CONFIG_DATA = yaml.load(file, Loader=yaml.FullLoader)
+    return CONFIG_DATA
 
 current_dir = os.path.abspath(__file__)
 base_path = os.path.abspath(os.path.join(current_dir, "../../TalentMatrix"))
+
+CONFIG_DATA = load_config(path='config.yaml')
 
 path_to_jd = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_jd'])
 path_to_train_resume = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_train_resume'])
@@ -56,19 +60,6 @@ def add_collection(file_path):
     data = []
     for file in os.listdir(file_path):
         result = reader.doc_markdown(os.path.join(file_path, file))
-        # print(result)
-        result = {
-            'basics': {'name': 'HOWARD GOODMAN', 'position': 'Fresher and NLP Engineer', 'email': 'abc@gmail.com', 'summary': 'test'},
-            'work': [{'company': 'Zynta Labs', 'title': 'NLP Developer Intern', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
-            'skills': ['Machine Learning', 'Natural Language Processing', 'Deep Learning', 'Sentiment Analysis', 'Python', 'NLTK', 'BERT', 'GPT', 'XLNet', 'Text Analysis', 'Text Extraction', 'OCR'],
-            'education': [{'school': 'Rajiv Gandhi Memorial University', 'degree': 'B.TECH(Electrical)', 'year': '2020', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
-            'projects': [{'title': 'abc', 'descriptions': 'Made an embedded device that converted ASL to voice and vice versa in real-time.'}]
-        }
-        result, flag = validator.validate_and_process(result)
-        if flag == False:
-            logger.error(result)
-            return result
-
         result['page_content'] = result
         data.append(result)
 
@@ -81,14 +72,10 @@ def retrieve(resume_path, top_k=2):
     """Retrieve the most relevant job descriptions for a given resume."""
     text = reader.doc_markdown(resume_path)
     result = llm(text)  
-
-    result = {
-        'basics': {'name': 'HOWARD GOODMAN', 'position': 'Fresher and NLP Engineer', 'email': 'abc@gmail.com', 'summary': 'test'},
-        'work': [{'company': 'Zynta Labs', 'title': 'NLP Developer Intern', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
-        'skills': ['Machine Learning', 'Natural Language Processing', 'Deep Learning', 'Sentiment Analysis', 'Python', 'NLTK', 'BERT', 'GPT', 'XLNet', 'Text Analysis', 'Text Extraction', 'OCR'],
-        'education': [{'school': 'Rajiv Gandhi Memorial University', 'degree': 'B.TECH(Electrical)', 'year': '2020', 'startDate': 'Apr 2019', 'endDate': 'Nov 2019'}],
-        'projects': [{'title': 'abc', 'descriptions': 'Made an embedded device that converted ASL to voice and vice versa in real-time.'}]
-    }
+    result, flag = validator.validate_and_process(result)
+    if flag == False:
+        logger.error(result)
+        return result
 
     results = chroma_client.query_collection(collection, json.dumps(result), top_k=top_k)
 
@@ -101,7 +88,6 @@ def retrieve(resume_path, top_k=2):
 
 
 def process_resume(resume_path, top_k=2):
-    """Wrapper function to process a single resume."""
     try:
         results = retrieve(resume_path, top_k=top_k)
         return {resume_path: results}

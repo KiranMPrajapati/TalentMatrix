@@ -7,3 +7,4 @@ data_path:
     path_to_test_resume: data/dataset/testResumes
     path_to_train_csv: data/dataset/train.csv
     path_to_test_csv: data/dataset/test.csv
+    upload_path: data/uploaded

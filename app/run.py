@@ -2,9 +2,22 @@ import os
 import sys
 import streamlit as st
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+from markitdown import MarkItDown
 
-from reader import doc_markdown
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+
+
+from reader import DOC_READER
+from main import retrieve, add_collection, CONFIG_DATA
+
+
+current_dir = os.path.abspath(__file__)
+base_path = os.path.abspath(os.path.join(current_dir, "../../"))
+
+md = MarkItDown()
+doc_reader = DOC_READER(md)
+
 
 
 def save_uploaded_file(uploaded_file):
@@ -23,15 +36,23 @@ def main():
     st.write("""An intelligent system that leverages NLP and recommendation algorithms to analyze resumes 
              and match candidates to job vacancies, streamlining the recruitment process and improving hiring efficiency.""")
 
+    uploaded_resume_file = st.file_uploader("Choose a resume to extract top k job matches", type=["pdf"])
 
-    uploaded_file = st.file_uploader("Choose a file", type=["pdf"])
+    if uploaded_resume_file is not None:
+        st.write(f"Uploaded file: {uploaded_resume_file.name}")
 
-    if uploaded_file is not None:
-        st.write(f"Uploaded file: {uploaded_file.name}")
+        save_uploaded_file(uploaded_resume_file)
+        results = retrieve(os.path.join(base_path,f"{CONFIG_DATA['data_path']['upload_path']}/{uploaded_resume_file.name}"))
+        st.write(results)
 
-        save_uploaded_file(uploaded_file)
-        content = doc_markdown(f"data/uploaded/{uploaded_file.name}")
-        st.write(content.text_content)
+    uploaded_jd_file = st.file_uploader("Choose job descriptions to save it in the database", type=["csv"])
+
+    if uploaded_jd_file is not None:
+        st.write(f"Uploaded file: {uploaded_jd_file.name}")
+
+        save_uploaded_file(uploaded_jd_file)
+        result = add_collection(os.path.join(base_path,f"{CONFIG_DATA['data_path']['upload_path']}/{uploaded_resume_file.name}"))
+        st.write(result)
 
 if __name__ == "__main__":
     main()

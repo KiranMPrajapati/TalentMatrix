@@ -84,7 +84,7 @@ class ChromaDB:
             sim_score = 1.0 - distance
         else:
             sim_score = None
-        return sim_score
+        return round(sim_score, 2)
 
     def query_collection(self, collection, query, top_k=2):
         query_result = collection.query(
