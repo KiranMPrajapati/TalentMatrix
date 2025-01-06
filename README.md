@@ -51,3 +51,18 @@ The dataset has been compiled in the following drive:
 
 `streamlit run app/run.py`
 
+## Evaluation 
+For evaluation, I am using [TorchMetrics](https://lightning.ai/docs/torchmetrics/stable/), a library that provides a wide range of metrics for machine learning models in PyTorch. TorchMetrics ensures consistency and reliability in metric computation across training, validation, and testing phases.
+
+Steps for Evaluation:
+
+1. Metric Initialization:
+
+The required metrics (e.g., accuracy, precision, recall, F1 score, or regression metrics like mean absolute error) are initialized using TorchMetrics.
+
+2. Threshold for Similarity Score:
+
+- A similarity score threshold of 0.8 has been chosen for evaluation.
+- If the model predicts a similarity score greater than 0.8, it is assumed to be a correct sample.
+- This threshold helps determine whether a prediction aligns well with the ground truth.
+
