@@ -43,6 +43,8 @@ The dataset has been compiled in the following drive:
 ## Setup
 1. Create venv
 
+`python3.x -m venv .venv`
+
 2. Install the requirements file
 
 `pip install -r requirements.txt`
@@ -70,3 +72,7 @@ Steps for Evaluation:
 - If the model predicts a similarity score greater than 0.8, it is assumed to be a correct sample.
 - This threshold helps determine whether a prediction aligns well with the ground truth.
 
+
+## Installation Requirements
+
+- python3
