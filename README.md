@@ -38,11 +38,14 @@ The dataset has been compiled in the following drive:
 
 ## Setup
 1. Create venv
+
 2. Install the requirements file
 
 `pip install requirements.txt`
 
-3. Run the file
+3. First, copy the contents of the config_sample.yaml file into a new file named config.yaml.
+
+4. Run the file
 
 `cd TalentMatrix`
 
