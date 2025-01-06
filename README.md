@@ -41,7 +41,7 @@ The dataset has been compiled in the following drive:
 
 2. Install the requirements file
 
-`pip install requirements.txt`
+`pip install -r requirements.txt`
 
 3. First, copy the contents of the config_sample.yaml file into a new file named config.yaml.
 
