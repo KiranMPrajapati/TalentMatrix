@@ -35,6 +35,10 @@ The dataset has been compiled in the following drive:
 
 - The validated entities were used to query the Chroma database, retrieving the top-k most relevant results based on the provided criteria.
 
+6. Save the data to postgresql database
+
+- The final results were saved to a PostgreSQL database. This included creating appropriate tables, ensuring indexing for faster query performance.
+
 
 ## Setup
 1. Create venv
@@ -58,7 +62,7 @@ Steps for Evaluation:
 
 1. Metric Initialization:
 
-The required metrics (e.g., accuracy, precision, recall, F1 score, or regression metrics like mean absolute error) are initialized using TorchMetrics.
+- The required metrics (e.g., accuracy, precision, recall, F1 score, or regression metrics like mean absolute error) are initialized using TorchMetrics.
 
 2. Threshold for Similarity Score:
 
