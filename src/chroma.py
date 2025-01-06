@@ -3,7 +3,7 @@ import json
 import chromadb
 from FlagEmbedding import FlagModel
 from chromadb.api.types import EmbeddingFunction
-from logger_config import get_logger
+from config import get_logger
 
 logger = get_logger("MainModule")
 
@@ -86,7 +86,7 @@ class ChromaDB:
             sim_score = None
         return round(sim_score, 2)
 
-    def query_collection(self, collection, query, top_k=2):
+    def query_collection(self, collection, query, resume_path, top_k=2):
         query_result = collection.query(
             query_texts=[query],
             n_results=top_k,
@@ -100,19 +100,21 @@ class ChromaDB:
             query_result["ids"][0]
         ):
             metadata = result[1] or {}
-            # Deserialize metadata values if needed
+
             if "keys" in metadata:
                 try:
                     metadata["keys"] = json.loads(metadata["keys"])
                 except (json.JSONDecodeError, TypeError):
                     logger.error(f"Failed to deserialize metadata keys: {metadata['keys']}")
-                    metadata["keys"] = []  # Default to empty list
+                    metadata["keys"] = []  
 
             results.append({
+                'resume_path': resume_path,
                 "page_content": result[0],
                 "metadata": metadata,
                 "similarity_score": self._calculate_relevance_score(result[2]),
                 "chunk_id": result[3],
+                "resume_path": resume_path
             })
 
         logger.info(f"\nQuery Results:\n {results}")

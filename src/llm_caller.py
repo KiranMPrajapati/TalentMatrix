@@ -5,7 +5,7 @@ import torch
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from logger_config import get_logger
+from config import get_logger
 
 logger = get_logger("MainModule")
 

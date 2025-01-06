@@ -1,5 +1,4 @@
 import os
-import yaml
 import json
 import pandas as pd
 import concurrent.futures
@@ -9,21 +8,17 @@ from markitdown import MarkItDown
 from src.llm_caller import LLM
 from src.reader import DOC_READER
 from src.chroma import setup_chromadb
+from config import get_logger, CONFIG_DATA
+from utils.save_to_db import save_to_postgresql
 from utils.resume_validator_and_processor import ResumeProcessor
-from logger_config import get_logger
 
 logger = get_logger("MainModule")
 
-# Load configuration file
-def load_config(path='config.yaml'):
-    with open(path, 'r') as file:
-        CONFIG_DATA = yaml.load(file, Loader=yaml.FullLoader)
-    return CONFIG_DATA
+
 
 current_dir = os.path.abspath(__file__)
 base_path = os.path.abspath(os.path.join(current_dir, "../../TalentMatrix"))
 
-CONFIG_DATA = load_config(path='config.yaml')
 
 path_to_jd = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_jd'])
 path_to_train_resume = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_train_resume'])
@@ -78,7 +73,8 @@ def retrieve(resume_path, top_k=2):
         logger.error(result)
         return result
 
-    results = chroma_client.query_collection(collection, json.dumps(result), top_k=top_k)
+    results = chroma_client.query_collection(collection, json.dumps(result), resume_path, top_k=top_k)
+    save_to_postgresql(results)
 
     for doc in results:
         print(f"Query Result: {doc}")
@@ -118,17 +114,17 @@ def process_resumes_in_parallel(resume_paths, top_k=2, max_workers=2):
                 results.update(result)
             except Exception as e:
                 logger.error(f"Error retrieving results for {resume_path}: {e}")
-    
+
     return results
 
 
 if __name__ == "__main__":
     resume_paths = os.path.join(f"{base_path}/data/dataset/test_resumes")
     top_k_results = process_resumes_in_parallel(resume_paths, top_k=2, max_workers=os.cpu_count())
-    print(top_k_results)
+    # print(top_k_results)
 
-    result = add_collection(path_to_train_resume)
+    # result = add_collection(path_to_train_resume)
 
     # Retrieve example
-    resume_path = 'candidate_000.pdf'
-    retrieve(os.path.join(path_to_train_resume, resume_path))
+    # resume_path = 'candidate_001.pdf'
+    # retrieve(os.path.join(path_to_train_resume, resume_path))
