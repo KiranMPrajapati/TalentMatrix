@@ -24,13 +24,25 @@ class LLM:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.summary_text = ""
 
-    def chunk_text(self, text):
+    def chunk_text(self, text, overlap_size=20):
         """
         Splits text into smaller chunks that fit within the model's maximum input size.
         """
         tokens = self.tokenizer(text, return_tensors="pt", truncation=False)["input_ids"][0]
-        total_chunks = math.ceil(tokens.size(0) / self.max_chunk_size)
-        chunks = [tokens[i * self.max_chunk_size:(i + 1) * self.max_chunk_size] for i in range(total_chunks)]
+        total_length = tokens.size(0)
+        chunks = []
+        
+        # Create overlapping chunks
+        start = 0
+        while start < total_length:
+            end = min(start + self.max_chunk_size, total_length)
+            chunks.append(tokens[start:end])
+            start = end - overlap_size  # Move the window with overlap
+
+            # Ensure we don't start below zero
+            if start < 0:
+                break
+
         return chunks
 
     def create_summarizer_prompt(self):
@@ -130,6 +142,8 @@ class LLM:
             self.summary_text = self.generate_response(resume_text, system_prompt, schema_description)
         system_prompt, schema_description = self.create_json_extractor_prompt()
         complete_response = self.generate_response(self.summary_text, system_prompt, schema_description)
+
+        breakpoint()
 
         json_match = re.search(r'```json\n(.*?)\n```', complete_response, re.DOTALL)
         if json_match:
