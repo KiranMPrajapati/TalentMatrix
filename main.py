@@ -71,7 +71,8 @@ def retrieve(resume_path, top_k=2):
     result, flag = validator.validate_and_process(result)
     if flag == False:
         logger.error(result)
-        return result
+        print("The resume seems incomplete. Please include all the necessary information in the resume.")
+        return "The resume seems incomplete. Please include all the necessary information in the resume." 
 
     results = chroma_client.query_collection(collection, json.dumps(result), resume_path, top_k=top_k)
     save_to_postgresql(results)
@@ -119,12 +120,12 @@ def process_resumes_in_parallel(resume_paths, top_k=2, max_workers=2):
 
 
 if __name__ == "__main__":
-    resume_paths = os.path.join(f"{base_path}/data/dataset/test_resumes")
-    top_k_results = process_resumes_in_parallel(resume_paths, top_k=2, max_workers=os.cpu_count())
+    # resume_paths = os.path.join(f"{base_path}/data/dataset/test_resumes")
+    # top_k_results = process_resumes_in_parallel(resume_paths, top_k=2, max_workers=os.cpu_count())
     # print(top_k_results)
 
     # result = add_collection(path_to_train_resume)
 
     # Retrieve example
-    # resume_path = 'candidate_001.pdf'
-    # retrieve(os.path.join(path_to_train_resume, resume_path))
+    resume_path = 'candidate_001.pdf'
+    retrieve(os.path.join(path_to_train_resume, resume_path))

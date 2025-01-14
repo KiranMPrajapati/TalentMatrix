@@ -1,3 +1,4 @@
+import re
 import json
 from pydantic import ValidationError
 
@@ -12,16 +13,25 @@ class ResumeProcessor:
     def __init__(self, llm, max_retries = 3):
         self.llm = llm  
         self.count = 0
+        self.retry = False
         self.max_retries = max_retries
 
     def validate_and_process(self, data):
         """
         Validate the data using the Resume model. If validation fails, rerun the LLM for invalid sections.
         """
-        try:            
+        try:
+            print(data)
+            if isinstance(data, re.Match):
+                if data.groups():
+                    data = data.group(1)  # Group 1 contains the matched value
+                else:
+                    data = data.group()  # No groups, return full match
+                data = json.loads(data)
+                # print(json.dumps(parsed_json, indent=4))
             resume = Resume(**data)
             print("Validation passed.")
-            return resume.dict()  
+            return resume.dict(), False 
         except ValidationError as e:
             print("Validation failed. Errors detected.")
             error_sections = self.parse_validation_errors(e, data)
@@ -55,8 +65,8 @@ class ResumeProcessor:
             # Convert invalid section back to text for the LLM
             text_input = f"Invalid section detected: {section}. Data: {content}"
             print(f"Reprocessing {section}...")
-            regenerated_output = self.llm(text_input, retry=True)
-            
+            self.retry = True
+            regenerated_output = self.llm(text_input, self.retry)
             # Assuming LLM output is structured correctly, convert it to Python dict
             reprocessed_data[section] = self.parse_llm_output(regenerated_output)
         return reprocessed_data
@@ -66,7 +76,8 @@ class ResumeProcessor:
         Safely parse the LLM output (assuming it's valid JSON format).
         """
         try:
-            return json.loads(llm_output)  
+            json_string = llm_output.group()
+            return json.loads(json_string)  
         except json.JSONDecodeError:
             print("Error: LLM output is not valid JSON.")
             return {}
