@@ -1,10 +1,21 @@
-from pydantic import BaseModel, HttpUrl, EmailStr, Field, validator
-from typing import List, Optional,  Union, Dict
+from pydantic import BaseModel, HttpUrl, EmailStr, Field, validator, field_validator
+from typing import List, Optional, Union, Dict
+from datetime import datetime
+
+
+# Define the reusable date validator function
+def validate_date_format(value: str) -> datetime.date:
+    try:
+        return datetime.strptime(value, "%d/%m/%Y").date()
+    except ValueError:
+        raise ValueError(f"Invalid date format for {value}. Expected format is 'dd/mm/yyyy'.")
+
 
 class Profile(BaseModel):
     network: str
     username: str
     url: HttpUrl
+
 
 class Location(BaseModel):
     address: str
@@ -12,6 +23,7 @@ class Location(BaseModel):
     city: str
     countryCode: str
     region: str
+
 
 class Basics(BaseModel):
     name: str
@@ -24,9 +36,10 @@ class Basics(BaseModel):
     location: Optional[Location] = None
     profiles: Optional[List[Profile]] = None
 
+
 class Work(BaseModel):
-    name: Optional[str] = ""
-    company: Optional[str] = ""
+    name: Optional[str] = None
+    company: Optional[str] = None
     title: Optional[str] = None
     url: Optional[HttpUrl] = None
     startDate: str
@@ -34,6 +47,11 @@ class Work(BaseModel):
     position: Optional[str] = None
     summary: Optional[str] = None
     highlights: Optional[List[str]] = None
+
+    @field_validator("startDate", "endDate", mode="before")
+    def validate_dates(cls, value):
+        return validate_date_format(value)
+
 
 class Volunteer(BaseModel):
     organization: str
@@ -43,6 +61,11 @@ class Volunteer(BaseModel):
     endDate: str
     summary: Optional[str] = None
     highlights: Optional[List[str]] = None
+
+    @field_validator("startDate", "endDate", mode="before")
+    def validate_dates(cls, value):
+        return validate_date_format(value)
+
 
 class Education(BaseModel):
     institution: Optional[str] = None
@@ -54,6 +77,11 @@ class Education(BaseModel):
     score: Optional[str] = None
     courses: Optional[List[str]] = None
 
+    @field_validator("startDate", "endDate", mode="before")
+    def validate_dates(cls, value):
+        return validate_date_format(value)
+
+
 class Award(BaseModel):
     name: Optional[Union[str, None]] = None
     title: Optional[Union[str, None]] = None
@@ -61,12 +89,22 @@ class Award(BaseModel):
     awarder: str
     summary: Optional[str] = None
 
+    @field_validator("date", mode="before")
+    def validate_dates(cls, value):
+        return validate_date_format(value)
+
+
 class Certificate(BaseModel):
     name: Optional[Union[str, None]] = None
     title: Optional[Union[str, None]] = None
     date: str
     issuer: str
     url: HttpUrl
+
+    @field_validator("date", mode="before")
+    def validate_dates(cls, value):
+        return validate_date_format(value)
+
 
 class Publication(BaseModel):
     name: Optional[Union[str, None]] = None
@@ -76,17 +114,21 @@ class Publication(BaseModel):
     url: HttpUrl
     summary: str
 
+
 class Language(BaseModel):
     language: str
     fluency: Optional[str] = None
+
 
 class Interest(BaseModel):
     name: str
     keywords: List[str]
 
+
 class Reference(BaseModel):
     name: str
     reference: str
+
 
 class Project(BaseModel):
     name: Optional[Union[str, None]] = None
@@ -98,6 +140,11 @@ class Project(BaseModel):
     url: Optional[HttpUrl] = None
     keywords: Optional[List[str]] = None
     roles: Optional[List[str]] = None
+
+    @field_validator("startDate", "endDate", mode="before")
+    def validate_dates(cls, value):
+        return validate_date_format(value)
+
 
 class Resume(BaseModel):
     basics: Basics
@@ -113,12 +160,15 @@ class Resume(BaseModel):
     references: Optional[List[Union[Reference, str]]] = None
     projects: List[Union[Project, str]]
 
-    @validator('work', 'education', pre=True, each_item=True)
-    def validate_dates(cls, value):
-        if 'startDate' in value.keys() and 'endDate' in value.keys():
-            if value['startDate'] > value['endDate']:
-                raise ValueError(f"startDate {value['startDate']} cannot be after endDate {value['endDate']}.")
+    @field_validator("work", "education", mode="before")
+    def validate_nested_dates(cls, value):
+        if "startDate" in value and "endDate" in value:
+            if value["startDate"] > value["endDate"]:
+                raise ValueError(
+                    f"startDate {value['startDate']} cannot be after endDate {value['endDate']}."
+                )
         return value
+
 
 # def validate_project_input(data: Union[dict, List[dict]]):
 #     if isinstance(data, list):
