@@ -10,6 +10,7 @@ from src.reader import DOC_READER
 from src.chroma import setup_chromadb
 from config import get_logger, CONFIG_DATA
 from utils.save_to_db import save_to_postgresql
+from utils.gender_classifier import GenderClassifier
 from utils.resume_validator_and_processor import ResumeProcessor
 
 logger = get_logger("MainModule")
@@ -75,6 +76,8 @@ def retrieve(resume_path, top_k=2):
         return "The resume seems incomplete. Please include all the necessary information in the resume." 
 
     results = chroma_client.query_collection(collection, json.dumps(result), resume_path, top_k=top_k)
+    gender = GenderClassifier(text)
+    results["basics"]["gender"] = gender
     save_to_postgresql(results)
 
     for doc in results:
