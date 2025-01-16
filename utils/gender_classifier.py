@@ -1,11 +1,7 @@
 import re
 from transformers import pipeline
 
-from config import CONFIG_DATA
 
-from huggingface_hub import login
-
-login(CONFIG_DATA['hf']['token'])
 
 class GenderClassifier: 
     """
@@ -35,9 +31,10 @@ class GenderClassifier:
             return "Unknown"
         
     def __call__(self, text):
+        print("loading the gender classifier model")
         gender_from_model = self.predict_gender_from_model(text)
         gender_from_regex = self.detect_gender_from_regex(text)
-
+        print("loaded the gender classifier model")
         if gender_from_model == gender_from_regex:
             return gender_from_regex
         else:

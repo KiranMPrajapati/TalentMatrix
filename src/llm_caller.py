@@ -6,6 +6,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from config import get_logger
+from utils.file_reader import json_reader, text_reader
 
 logger = get_logger("MainModule")
 
@@ -59,6 +60,8 @@ class LLM:
         return SYSTEM_PROMPT, schema_description
 
     def create_json_extractor_prompt(self):
+        example_text = text_reader()
+        example_json = json_reader()
         SYSTEM_PROMPT = """You are a highly intelligent AI designed to extract structured information from resumes. 
         Your goal is to analyze a given resume text and return the extracted details in the following JSON schema format."""
 
@@ -91,7 +94,17 @@ class LLM:
         You have to output JSON FORMAT only. 
         """
 
-        return SYSTEM_PROMPT, schema_description
+        example_schema = f"""
+        Here is an example sample:
+
+        RESUME TEXT:
+        {example_text}
+
+        EXTRACTED JSON:
+        {example_json}
+        """
+
+        return SYSTEM_PROMPT, schema_description + example_schema
     
     def count_tokens(self, chunks):
         """

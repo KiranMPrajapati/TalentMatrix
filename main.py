@@ -3,8 +3,10 @@ import json
 import pandas as pd
 import concurrent.futures
 
+from huggingface_hub import login
 from markitdown import MarkItDown
 
+from config import CONFIG_DATA
 from src.llm_caller import LLM
 from src.reader import DOC_READER
 from src.chroma import setup_chromadb
@@ -13,8 +15,10 @@ from utils.save_to_db import save_to_postgresql
 from utils.gender_classifier import GenderClassifier
 from utils.resume_validator_and_processor import ResumeProcessor
 
+
 logger = get_logger("MainModule")
 
+login(CONFIG_DATA['hf']['token'])
 
 
 current_dir = os.path.abspath(__file__)
@@ -67,6 +71,7 @@ def add_collection(file_path):
 def retrieve(resume_path, top_k=2):
     """Retrieve the most relevant job descriptions for a given resume."""
     text = reader.doc_markdown(resume_path)
+    print(text)
     result = llm(text)  
     
     result, flag = validator.validate_and_process(result)
