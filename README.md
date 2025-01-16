@@ -49,7 +49,7 @@ The dataset has been compiled in the following drive:
 
 `pip install -r requirements.txt`
 
-3. First, copy the contents of the config_sample.yaml file into a new file named config.yaml.
+3. Start by duplicating the contents of the config_sample.yaml file into a new file named config.yaml. Then, adjust the configuration settings within the file to align with your specific setup.
 
 4. Run the file
 

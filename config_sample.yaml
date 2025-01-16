@@ -9,8 +9,10 @@ data_path:
     path_to_test_csv: data/dataset/test.csv
     upload_path: data/uploaded
 db_params: 
-    dbname: db_name
-    user: user
-    password: pw
-    host: host
-    port: port
+    dbname: <db_name>
+    user: <user>
+    password: <pw>
+    host: <host>
+    port: <port>
+hf:
+    token: <place_your_hf_token_here>

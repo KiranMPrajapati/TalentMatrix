@@ -1,7 +1,11 @@
 import re
 from transformers import pipeline
 
+from config import CONFIG_DATA
 
+from huggingface_hub import login
+
+login(CONFIG_DATA['hf']['token'])
 
 class GenderClassifier: 
     """
