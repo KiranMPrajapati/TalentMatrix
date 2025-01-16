@@ -34,6 +34,7 @@ path_to_test_csv = os.path.join(base_path, CONFIG_DATA['data_path']['path_to_tes
 md = MarkItDown()
 reader = DOC_READER(md)
 llm = LLM()
+gender_classifier = GenderClassifier()
 validator = ResumeProcessor(llm)
 chroma_client, collection = setup_chromadb(
     CONFIG_DATA['chroma']['chroma_db_storage_path'], CONFIG_DATA['chroma']['collection_name']
@@ -81,7 +82,7 @@ def retrieve(resume_path, top_k=2):
         return "The resume seems incomplete. Please include all the necessary information in the resume." 
 
     results = chroma_client.query_collection(collection, json.dumps(result), resume_path, top_k=top_k)
-    gender = GenderClassifier(text)
+    gender = gender_classifier(text)
     results["basics"]["gender"] = gender
     save_to_postgresql(results)
 
