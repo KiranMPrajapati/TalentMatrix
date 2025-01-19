@@ -9,11 +9,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../'
 
 
 from reader import DOC_READER
-from main import retrieve, add_collection, CONFIG_DATA
+from config import CONFIG_DATA
+from main import retrieve, add_jd_collection
 
 
 current_dir = os.path.abspath(__file__)
 base_path = os.path.abspath(os.path.join(current_dir, "../../"))
+
+os.makedirs(os.path.join(base_path,f"{CONFIG_DATA['data_path']['upload_path']}"), exist_ok=True) 
+
 
 md = MarkItDown()
 doc_reader = DOC_READER(md)
@@ -36,22 +40,24 @@ def main():
     st.write("""An intelligent system that leverages NLP and recommendation algorithms to analyze resumes 
              and match candidates to job vacancies, streamlining the recruitment process and improving hiring efficiency.""")
 
-    uploaded_resume_file = st.file_uploader("Choose a resume to extract top k job matches", type=["pdf"])
+    uploaded_resume_file = st.file_uploader("Choose a resume (PDF format) to extract top k job matches", type=["pdf"])
 
     if uploaded_resume_file is not None:
         st.write(f"Uploaded file: {uploaded_resume_file.name}")
 
         save_uploaded_file(uploaded_resume_file)
         results = retrieve(os.path.join(base_path,f"{CONFIG_DATA['data_path']['upload_path']}/{uploaded_resume_file.name}"))
-        st.write(results)
+        if results: 
+            st.write("Outputs:")
+            st.write(results)
 
-    uploaded_jd_file = st.file_uploader("Choose job descriptions to save it in the database", type=["csv"])
+    uploaded_jd_file = st.file_uploader("Choose job descriptions (CSV format) to save it in the database", type=["csv"])
 
     if uploaded_jd_file is not None:
         st.write(f"Uploaded file: {uploaded_jd_file.name}")
 
         save_uploaded_file(uploaded_jd_file)
-        result = add_collection(os.path.join(base_path,f"{CONFIG_DATA['data_path']['upload_path']}/{uploaded_resume_file.name}"))
+        result = add_jd_collection(os.path.join(base_path,f"{CONFIG_DATA['data_path']['upload_path']}/{uploaded_jd_file.name}"))
         st.write(result)
 
 if __name__ == "__main__":

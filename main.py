@@ -53,7 +53,7 @@ def add_jd_collection(jd_path="JD_data.csv"):
         data.append(value)
 
     chroma_client.add_to_collection(collection=collection, docs=data)
-    return "Success"
+    return f"Successfully saved to collection: {collection.name}"
     
 
 def add_collection(file_path):
@@ -74,15 +74,17 @@ def retrieve(resume_path, top_k=2):
     text = reader.doc_markdown(resume_path)
     print(text)
     result = llm(text)  
+    # breakpoint()
     
-    result, flag = validator.validate_and_process(result)
+    result, flag = validator.validate_and_process(text, result)
     if flag == False:
         logger.error(result)
-        print("The resume seems incomplete. Please include all the necessary information in the resume.")
-        return "The resume seems incomplete. Please include all the necessary information in the resume." 
+        print(result)
+        return result 
 
     results = chroma_client.query_collection(collection, json.dumps(result), resume_path, top_k=top_k)
     gender = gender_classifier(text)
+    breakpoint()
     results["basics"]["gender"] = gender
     save_to_postgresql(results)
 

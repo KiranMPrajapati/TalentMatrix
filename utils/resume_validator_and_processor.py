@@ -16,7 +16,7 @@ class ResumeProcessor:
         self.retry = False
         self.max_retries = max_retries
 
-    def validate_and_process(self, data):
+    def validate_and_process(self, resume_text, data):
         """
         Validate the data using the Resume model. If validation fails, rerun the LLM for invalid sections.
         """
@@ -27,8 +27,11 @@ class ResumeProcessor:
                     data = data.group(1)  # Group 1 contains the matched value
                 else:
                     data = data.group()  # No groups, return full match
+                if isinstance(data, tuple):
+                    data = data[0]
                 data = json.loads(data)
                 # print(json.dumps(parsed_json, indent=4))
+            print(data)
             resume = Resume(**data)
             print("Validation passed.")
             return resume.dict(), False 
@@ -42,8 +45,8 @@ class ResumeProcessor:
             self.count += 1
 
             if self.count >= self.max_retries:
-                return "The resume is not complete and rejected.", False
-            return self.validate_and_process(merged_data), True
+                return f"The resume is not complete and rejected. Following issue occured: \n {e}", False
+            return self.validate_and_process(resume_text, merged_data), False
 
     def parse_validation_errors(self, error, original_data):
         """
@@ -52,6 +55,8 @@ class ResumeProcessor:
         invalid_sections = {}
         for err in error.errors():
             field = err['loc'][0]
+            if field not in original_data:
+                continue
             if field not in invalid_sections:
                 invalid_sections[field] = original_data[field]
         return invalid_sections
